@@ -1,5 +1,1 @@
-[
-  { "name": "1-start.jpg", "query": "?shot=start&seed=1" },
-  { "name": "2-play.jpg", "query": "?shot=play&seed=1" },
-  { "name": "3-end.jpg", "query": "?shot=end&seed=1" }
-]
+[{"caption":"Driving the taxi down Palm Row with the HUD, minimap and a one-star wanted level","name":"1-drive.jpg","query":"?shot=drive"},{"caption":"On foot in a busy downtown street with traffic and pedestrians","name":"2-walk.jpg","query":"?shot=walk"},{"caption":"Police pursuit in the stolen red Comet at three stars","name":"3-chase.jpg","query":"?shot=chase"},{"caption":"Mission 4 at the Port: the Harbor crew and the mission beacon","name":"4-mission.jpg","query":"?shot=mission"}]
