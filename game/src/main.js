@@ -230,7 +230,7 @@ function stageShot(kind) {
   startGame(false);
   if (kind === 'drive') {
     player.enterCar(missions.specialCarById('taxi').car);
-    player.teleport(0, 150, Math.PI);
+    player.teleport(0, 150, 0); // face south: mission beacon + marina ahead
     player.driveSpeed = 14;
     police.addWanted(1, 'staged');
     traffic.update(0.1, player.pos, 0, 1);
@@ -247,7 +247,7 @@ function stageShot(kind) {
   } else if (kind === 'mission') {
     missions.restore(3);
     missions._nextObjective(); // advance to "eliminate the Harbor crew": thugs spawn
-    player.teleport(140, -132, Math.PI * 0.8);
+    player.teleport(140, -168, 0); // south edge of the Port, facing SOUTH into the yard + Harbor crew (yard is at z -150..-140, i.e. south of here)
   }
   state = 'playing';
   showScreen(null);
@@ -335,6 +335,7 @@ window.addEventListener('resize', () => {
 window.__solbay = {
   version: 'solbay-1.0',
   get state() { return state; },
+  get cameraPos() { return [Math.round(camera.position.x), Math.round(camera.position.y), Math.round(camera.position.z)]; },
   player, missions, police, traffic, combat, city,
   teleport: (x, z, h) => player.teleport(x, z, h),
   setWanted: (n) => { police.wanted = n; },

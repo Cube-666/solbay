@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOLBAY — Open-World Crime</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1420;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #fff; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+  .panel { background: rgba(8, 14, 24, 0.62); border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 10px; backdrop-filter: blur(4px); }
+  /* mission tracker, top-left */
+  #mission { position: absolute; top: 14px; left: 14px; padding: 10px 14px; max-width: 340px; }
+  #mission-title { font-size: 15px; font-weight: 800; letter-spacing: 0.4px; color: #ffd34d; }
+  #mission-objective { font-size: 13px; margin-top: 3px; line-height: 1.35; }
+  #mission-distance { font-size: 12px; color: #9fd8ff; margin-top: 2px; }
+  /* money + wanted, top-right */
+  #stats { position: absolute; top: 14px; right: 14px; padding: 10px 14px; text-align: right; }
+  #money { font-size: 22px; font-weight: 800; color: #7dff9a; }
+  #wanted { font-size: 20px; letter-spacing: 3px; color: #8a97a3; margin-top: 2px; }
+  #wanted.wanted-hot { color: #ff5a4e; text-shadow: 0 0 12px rgba(255,60,40,0.8); }
+  /* minimap + health, bottom-left */
+  #map-wrap { position: absolute; left: 14px; bottom: 14px; }
+  #health { width: 200px; height: 14px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 7px; overflow: hidden; margin-bottom: 6px; position: relative; }
+  #health-fill { height: 100%; width: 100%; background: #34c759; transition: width 0.2s; }
+  #health-text { position: absolute; right: 6px; top: -1px; font-size: 11px; font-weight: 700; }
+  #minimap { width: 200px; height: 200px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.25); display: block; }
+  /* speed, bottom-right */
+  #speed { position: absolute; right: 16px; bottom: 16px; text-align: right; }
+  #speed-value { font-size: 44px; font-weight: 800; line-height: 1; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+  #speed-label { font-size: 12px; letter-spacing: 2px; color: #cfe3f5; }
+  /* prompt, bottom-center */
+  #prompt { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    padding: 8px 16px; font-size: 14px; font-weight: 600; display: none; }
+  /* banner, center */
+  #banner { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; display: none; }
+  #banner-title { font-size: 34px; font-weight: 900; letter-spacing: 1px; color: #ffd34d;
+    text-shadow: 0 2px 14px rgba(0,0,0,0.7); }
+  #banner-sub { font-size: 15px; margin-top: 4px; text-shadow: 0 1px 6px rgba(0,0,0,0.7); }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px;
+    background: #fff; border-radius: 50%; box-shadow: 0 0 4px #000; }
+  /* full screens */
+  .screen { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    background: linear-gradient(180deg, rgba(6,12,24,0.82), rgba(6,12,24,0.55) 55%, rgba(6,12,24,0.85)); }
+  .screen h1 { font-size: 64px; margin: 0; letter-spacing: 6px; font-weight: 900;
+    background: linear-gradient(180deg, #ffe9a0, #ff9d5c); -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; text-shadow: 0 4px 30px rgba(255,150,60,0.25); }
+  .screen h2 { font-size: 15px; letter-spacing: 4px; color: #9fd8ff; margin: 6px 0 0; font-weight: 600; }
+  .screen p { max-width: 560px; font-size: 15px; line-height: 1.6; color: #dbe7f2; }
+  .controls { font-size: 13px; color: #b9c9d8; line-height: 1.9; margin: 8px 0 18px; }
+  .controls b { color: #ffd34d; }
+  .btn { pointer-events: auto; cursor: pointer; border: none; border-radius: 10px; padding: 13px 34px;
+    font-size: 16px; font-weight: 800; letter-spacing: 1px; color: #1a1206;
+    background: linear-gradient(180deg, #ffd34d, #ff9d5c); box-shadow: 0 4px 18px rgba(255,157,92,0.45); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn-ghost { background: rgba(255,255,255,0.12); color: #fff; box-shadow: none; border: 1px solid rgba(255,255,255,0.3); margin-left: 10px; }
+  #screen-pause, #screen-end { display: none; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+<canvas id="game" aria-label="SOLBAY: open-world crime game. Explore the city on foot or by car, follow missions, evade the police."></canvas>
+<div id="hud">
+  <div id="mission" class="panel">
+    <div id="mission-title">SOLBAY</div>
+    <div id="mission-objective"></div>
+    <div id="mission-distance"></div>
+  </div>
+  <div id="stats" class="panel">
+    <div id="money">$0</div>
+    <div id="wanted">☆☆☆☆☆</div>
+  </div>
+  <div id="map-wrap">
+    <div id="health"><div id="health-fill"></div><span id="health-text">100</span></div>
+    <canvas id="minimap" width="200" height="200"></canvas>
+  </div>
+  <div id="speed"><span id="speed-value"></span><div id="speed-label"></div></div>
+  <div id="prompt" class="panel"></div>
+  <div id="banner"><div id="banner-title"></div><div id="banner-sub"></div></div>
+  <div id="crosshair"></div>
+</div>
+
+<div id="screen-title" class="screen">
+  <h1>SOLBAY</h1>
+  <h2>AN OPEN-WORLD CRIME STORY</h2>
+  <p>Sun, sea and bad decisions. You are <b>Dario Cole</b>, a driver-for-hire in the coastal city of
+  Solbay. Mama Rosa has work for you — fares, hot cars, heat from the PD, and one last big score
+  at the Port. Steal cars, lose the cops, and make a name for yourself.</p>
+  <div class="controls">
+    <b>W A S D</b> move / drive &nbsp;•&nbsp; <b>Shift</b> run &nbsp;•&nbsp; <b>Mouse drag</b> look<br>
+    <b>E</b> enter / exit car &nbsp;•&nbsp; <b>Click</b> shoot &nbsp;•&nbsp; <b>F</b> punch<br>
+    <b>Space</b> handbrake &nbsp;•&nbsp; <b>P</b> pause &nbsp;•&nbsp; <b>M</b> mute
+  </div>
+  <div>
+    <button id="btn-start" class="btn">START ENGINE</button>
+    <button id="btn-continue" class="btn btn-ghost" style="display:none">CONTINUE</button>
+  </div>
+</div>
+
+<div id="screen-pause" class="screen">
+  <h1 style="font-size:42px">PAUSED</h1>
+  <p>Solbay waits for no one — except right now.</p>
+  <div><button id="btn-resume" class="btn">RESUME</button></div>
+</div>
+
+<div id="screen-end" class="screen">
+  <h1 id="end-title" style="font-size:48px">BUSTED</h1>
+  <p id="end-sub"></p>
+  <div><button id="btn-restart" class="btn">BACK ON THE STREETS</button></div>
+</div>
+
+<p id="status" role="status" aria-live="polite"></p>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

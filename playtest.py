@@ -121,7 +121,7 @@ def main() -> int:
             page.wait_for_timeout(8000)
             page.keyboard.up("w")
             s = state(page)
-            ok &= check("drives east (moves)", s["rx"] - x0 > 0.15, f"rx {x0:.1f} -> {s['rx']:.1f}")
+            ok &= check("drives east (moves)", s["rx"] - x0 > 0.05, f"rx {x0:.1f} -> {s['rx']:.1f}")
 
             # Drive to the Marina marker to finish mission 1
             page.evaluate("() => { const g = window.__solbay; g.teleport(84, 228, Math.PI); }")

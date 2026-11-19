@@ -107,9 +107,10 @@ export class MissionSystem {
     if (!obj) { this._completeMission(); return; }
     if (obj.type === 'goto' || obj.type === 'driveTo') this._placeMarker(obj.x, obj.z);
     if (obj.type === 'eliminate' && this.hooks.combat) {
-      const spots = [[146, -146], [152, -142], [144, -154], [156, -150]];
+      // Harbor crew in the open aisle of the container yard (no buildings there)
+      const spots = [[140, -146], [146, -150], [152, -144], [148, -142]];
       for (const [x, z] of spots) this.hooks.combat.spawnEnemy(x, z);
-      this._placeMarker(150, -150);
+      this._placeMarker(148, -146);
     }
     if (this.index === 2 && this.objIndex === 0) {
       // the Heat mission starts with the cops already on the player

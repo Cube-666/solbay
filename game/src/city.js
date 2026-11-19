@@ -136,6 +136,7 @@ export function buildCity(scene) {
   const parks = new Set(['-140,-140', '140,-84', '-84,140']);
   const plazaBlock = '28,28';
   const parkingBlock = '-28,140';
+  const portBlock = '140,-140'; // dedicated container yard: no buildings, open aisle for the Harbor crew
   let buildingCount = 0;
 
   for (const bx of blockCenters) for (const bz of blockCenters) {
@@ -175,6 +176,33 @@ export function buildCity(scene) {
       const lot = new THREE.Mesh(new THREE.PlaneGeometry(40, 40),
         new THREE.MeshStandardMaterial({ color: 0x3a3d42, roughness: 1 }));
       lot.rotation.x = -Math.PI / 2; lot.position.set(bx, 0.07, bz); lot.receiveShadow = true; scene.add(lot);
+      continue;
+    }
+    if (key === portBlock) {
+      // container yard: two rows with a clear central aisle (the Harbor crew fight happens here)
+      const containerColors = [0xc0392b, 0x2471a3, 0x229954, 0xd4ac0d, 0x7d3c98];
+      const yard = [
+        [138, -158, false], [148, -158, true], [158, -158, false],
+        [138, -134, true], [148, -134, false], [158, -134, true],
+      ];
+      for (const [cx, cz, stacked] of yard) {
+        const c = box(6, 2.6, 2.6, new THREE.MeshStandardMaterial({ color: pick(containerColors), roughness: 0.8, metalness: 0.3 }),
+          cx, 1.3, cz);
+        c.rotation.y = 0.15; scene.add(c);
+        addCollider(cx, cz, 3.2, 1.6);
+        if (stacked) {
+          const c2 = box(6, 2.6, 2.6, new THREE.MeshStandardMaterial({ color: pick(containerColors), roughness: 0.8, metalness: 0.3 }),
+            cx, 3.9, cz);
+          c2.rotation.y = 0.15; scene.add(c2);
+        }
+      }
+      // dock crane silhouette at the east edge
+      const craneMat = new THREE.MeshStandardMaterial({ color: 0x8a6d1b, roughness: 0.7, metalness: 0.4 });
+      for (const [lx, lz] of [[166, -156], [166, -136]]) {
+        const leg = box(1.2, 16, 1.2, craneMat, lx, 8, lz); scene.add(leg);
+      }
+      const beam = box(1.4, 1.4, 24, craneMat, 166, 15.5, -146); scene.add(beam);
+      addCollider(166, -146, 1, 11);
       continue;
     }
     // buildings: 1 tower or 2-4 mid blocks
@@ -269,15 +297,6 @@ export function buildCity(scene) {
     glass.position.y = 3.2; yacht.add(glass);
     yacht.position.set(104, 0.1, 276); yacht.rotation.y = 0.4;
     scene.add(yacht);
-  }
-
-  // ---- port containers (east side) ----
-  const containerColors = [0xc0392b, 0x2471a3, 0x229954, 0xd4ac0d, 0x7d3c98];
-  for (let i = 0; i < 8; i++) {
-    const c = box(6, 2.6, 2.6, new THREE.MeshStandardMaterial({ color: pick(containerColors), roughness: 0.8, metalness: 0.3 }),
-      150 + (i % 2) * 8, 1.3 + Math.floor(i / 2) % 2 * 2.7, -150 + Math.floor(i / 4) * 10);
-    c.rotation.y = 0.15; scene.add(c);
-    addCollider(c.position.x, c.position.z, 3.2, 1.6);
   }
 
   // ---- parked cars (static props, some stealable) ----
